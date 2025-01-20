@@ -1,13 +1,18 @@
+import os
 from flask import Flask, request, jsonify
 import requests
 
+# Initialize Flask app
 app = Flask(__name__)
 
+# Constants
 API_BASE_URL = "https://api.onegov.nsw.gov.au"
-API_KEY = "GAOTu9pI4uFD3tjp8wJv4i8AHlb2p6SP"
-API_SECRET = "hAfxSmMepBMn5iIX"
-AUTH_HEADER = "Basic R0FPVHU5cEk0dUZEM3RqcDh3SnY0aThBSGxiMnA2U1A6aEFmeFNtTWVwQk1uNWlJWA=="
+API_KEY = os.getenv("API_KEY")
+API_SECRET = os.getenv("API_SECRET")
+AUTH_HEADER = os.getenv("AUTH_HEADER")
 
+
+# Function to get access token
 def get_access_token():
     url = f"{API_BASE_URL}/oauth/client_credential/accesstoken"
     headers = {
@@ -19,83 +24,115 @@ def get_access_token():
     response.raise_for_status()
     return response.json()["access_token"]
 
+
+# Route to fetch contracts list
 @app.route("/contractlist", methods=["GET"])
 def get_contract_list():
-    token = get_access_token()
     start_row = request.args.get("startRow", 0)
+    token = get_access_token()
     url = f"{API_BASE_URL}/etender/v1/contractlist"
     headers = {
         "Authorization": f"Bearer {token}",
         "apikey": API_KEY,
+        "Content-Type": "application/json",
     }
     params = {"startRow": start_row}
     response = requests.get(url, headers=headers, params=params)
     return jsonify(response.json())
 
+
+# Route to fetch contract details
 @app.route("/contractdetails", methods=["GET"])
 def get_contract_details():
+    contract_id = request.args.get("CNUUID")
+    if not contract_id:
+        return jsonify({"error": "CNUUID is required"}), 400
     token = get_access_token()
-    cn_uuid = request.args.get("CNUUID")
     url = f"{API_BASE_URL}/etender/v1/contractdetails"
     headers = {
         "Authorization": f"Bearer {token}",
         "apikey": API_KEY,
+        "Content-Type": "application/json",
     }
-    params = {"CNUUID": cn_uuid}
+    params = {"CNUUID": contract_id}
     response = requests.get(url, headers=headers, params=params)
     return jsonify(response.json())
 
+
+# Route to fetch planned procurement list
 @app.route("/plannedprocurementlist", methods=["GET"])
 def get_planned_procurement_list():
-    token = get_access_token()
     start_row = request.args.get("startRow", 0)
+    token = get_access_token()
     url = f"{API_BASE_URL}/etender/v1/plannedprocurementlist"
     headers = {
         "Authorization": f"Bearer {token}",
         "apikey": API_KEY,
+        "Content-Type": "application/json",
     }
     params = {"startRow": start_row}
     response = requests.get(url, headers=headers, params=params)
     return jsonify(response.json())
 
+
+# Route to fetch planned procurement details
 @app.route("/plannedprocurementdetails", methods=["GET"])
 def get_planned_procurement_details():
+    procurement_id = request.args.get("PlannedProcurementUUID")
+    if not procurement_id:
+        return jsonify({"error": "PlannedProcurementUUID is required"}), 400
     token = get_access_token()
-    pp_uuid = request.args.get("PlannedProcurementUUID")
     url = f"{API_BASE_URL}/etender/v1/plannedprocurementdetails"
     headers = {
         "Authorization": f"Bearer {token}",
         "apikey": API_KEY,
+        "Content-Type": "application/json",
     }
-    params = {"PlannedProcurementUUID": pp_uuid}
+    params = {"PlannedProcurementUUID": procurement_id}
     response = requests.get(url, headers=headers, params=params)
     return jsonify(response.json())
 
+
+# Route to fetch standing offer notice details
 @app.route("/standingoffernoticedetails", methods=["GET"])
 def get_standing_offer_notice_details():
+    son_id = request.args.get("SONUUID")
+    if not son_id:
+        return jsonify({"error": "SONUUID is required"}), 400
     token = get_access_token()
-    son_uuid = request.args.get("SONUUID")
     url = f"{API_BASE_URL}/etender/v1/standingoffernoticedetails"
     headers = {
         "Authorization": f"Bearer {token}",
         "apikey": API_KEY,
+        "Content-Type": "application/json",
     }
-    params = {"SONUUID": son_uuid}
+    params = {"SONUUID": son_id}
     response = requests.get(url, headers=headers, params=params)
     return jsonify(response.json())
 
+
+# Route to fetch standing offer notice list
 @app.route("/standingoffernoticelist", methods=["GET"])
 def get_standing_offer_notice_list():
-    token = get_access_token()
     start_row = request.args.get("startRow", 0)
+    token = get_access_token()
     url = f"{API_BASE_URL}/etender/v1/standingoffernoticelist"
     headers = {
         "Authorization": f"Bearer {token}",
         "apikey": API_KEY,
+        "Content-Type": "application/json",
     }
     params = {"startRow": start_row}
     response = requests.get(url, headers=headers, params=params)
     return jsonify(response.json())
 
+
+# Root endpoint
+@app.route("/", methods=["GET"])
+def root():
+    return jsonify({"status": "API is running"})
+
+
+# Run the Flask app
 if __name__ == "__main__":
-    app.run()
+    app.run(host="0.0.0.0", port=3000)
